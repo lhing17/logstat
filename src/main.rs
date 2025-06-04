@@ -7,6 +7,9 @@ struct Cli {
     #[arg(short, long)]
     total: bool,
 
+    #[arg(short, long)]
+    verbose: bool,
+
     #[arg(short = 'F', long)]
     filter: Vec<String>,
 }
@@ -17,6 +20,7 @@ fn main() -> anyhow::Result<()> {
     // 初始化总行数
     let mut total_lines = 0;
     let mut matched_lines = 0;
+    let mut output = String::new();
 
     let files = if (&args.file).is_empty() {
         vec!["-".to_string()]
@@ -35,19 +39,35 @@ fn main() -> anyhow::Result<()> {
         };
 
         // 累加总行数
-        matched_lines += count_lines(&content, &args.filter);
+        let count_lines = count_lines(&content, &args.filter);
+        
+        if args.verbose {
+            let count = content.lines().count();
+            if args.total {
+                output.push_str(&format!("{}\t{}\t{}\n", file_path, count, count_lines));
+            } else {
+                output.push_str(&format!("{}\t{}\n", file_path, count_lines));
+            }
+        }
+        matched_lines += count_lines;
         if args.total {
-            total_lines += content.lines().count();
+            let count = content.lines().count();
+            total_lines += count;
         }
     }
 
-    if args.total {
-        println!("文件路径\t总行数\t匹配行数");
-        println!("{}\t{}\t{}", files.join(" "), total_lines, matched_lines);
+    let header = if args.total { "文件路径\t总行数\t匹配行数" } else { "文件路径\t匹配行数" };
+    let stats = if args.total {
+        format!("{}\t{}\t{}", files.join(" "), total_lines, matched_lines)
     } else {
-        println!("文件路径\t匹配行数");
-        println!("{}\t{}", files.join(" "), matched_lines);
+        format!("{}\t{}", files.join(" "), matched_lines)
+    };
+    if args.verbose {
+        println!("{}\n{}", header, output);
+    } else {
+        println!("{}\n{}", header, stats);
     }
+   
 
     Ok(())
 }
