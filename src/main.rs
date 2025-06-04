@@ -10,32 +10,43 @@ struct Cli {
 
 fn main() -> anyhow::Result<()> {
     let args = Cli::parse();
-    let mut total_lines = 0; // 初始化总行数
 
-    for file_path in args.file {
-        let content = std::fs::read_to_string(&file_path)
-            .map_err(|e| anyhow::anyhow!("无法读取文件 {}: {}", file_path, e))?;
+    // 初始化总行数
+    let mut total_lines = 0;
 
-        // 如果包含filter，则统计包含filter字符串的行数，否则统计所有行数
-        let lines = if !args.filter.is_empty() {
-            content
-                .lines()
-                .filter(|line| args.filter.iter().all(|f_str| line.contains(f_str)))
-                .count()
+    let files = if (&args.file).is_empty() {
+        vec!["-".to_string()]
+    } else {
+        args.file
+    };
+
+    for file_path in files {
+        // 读取文件内容，如果文件路径为"-"，则从标准输入读取
+        let content = if (&file_path) == "-" {
+            std::io::read_to_string(std::io::stdin())
+                .map_err(|e| anyhow::anyhow!("无法从标准输入读取: {}", e))?
         } else {
-            content.lines().count()
+            std::fs::read_to_string(&file_path)
+                .map_err(|e| anyhow::anyhow!("无法读取文件 {}: {}", file_path, e))?
         };
-        total_lines += lines; // 累加总行数
+
+        // 累加总行数
+        total_lines += count_lines(&content, &args.filter);
     }
 
     println!("日志文件包含{}行", total_lines);
 
-    test();
-
     Ok(())
 }
 
-fn test() {
-    let s1 = String::from("hello");
-    println!(" {}", s1);
+// 在文件中添加以下函数定义
+fn count_lines(content: &str, filters: &[String]) -> usize {
+    if !filters.is_empty() {
+        content
+            .lines()
+            .filter(|line| filters.iter().all(|f_str| line.contains(f_str)))
+            .count()
+    } else {
+        content.lines().count()
+    }
 }
