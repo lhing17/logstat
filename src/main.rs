@@ -4,6 +4,9 @@ use clap::Parser;
 struct Cli {
     file: Vec<String>,
 
+    #[arg(short, long)]
+    total: bool,
+
     #[arg(short = 'F', long)]
     filter: Vec<String>,
 }
@@ -13,6 +16,7 @@ fn main() -> anyhow::Result<()> {
 
     // 初始化总行数
     let mut total_lines = 0;
+    let mut matched_lines = 0;
 
     let files = if (&args.file).is_empty() {
         vec!["-".to_string()]
@@ -20,9 +24,9 @@ fn main() -> anyhow::Result<()> {
         args.file
     };
 
-    for file_path in files {
+    for file_path in &files {
         // 读取文件内容，如果文件路径为"-"，则从标准输入读取
-        let content = if (&file_path) == "-" {
+        let content = if file_path == "-" {
             std::io::read_to_string(std::io::stdin())
                 .map_err(|e| anyhow::anyhow!("无法从标准输入读取: {}", e))?
         } else {
@@ -31,10 +35,19 @@ fn main() -> anyhow::Result<()> {
         };
 
         // 累加总行数
-        total_lines += count_lines(&content, &args.filter);
+        matched_lines += count_lines(&content, &args.filter);
+        if args.total {
+            total_lines += content.lines().count();
+        }
     }
 
-    println!("日志文件包含{}行", total_lines);
+    if args.total {
+        println!("文件路径\t总行数\t匹配行数");
+        println!("{}\t{}\t{}", files.join(" "), total_lines, matched_lines);
+    } else {
+        println!("文件路径\t匹配行数");
+        println!("{}\t{}", files.join(" "), matched_lines);
+    }
 
     Ok(())
 }
