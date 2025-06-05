@@ -34,7 +34,7 @@ jobs:
       uses: actions-rust-lang/setup-rust-toolchain@v1
       with:
         toolchain: stable
-        targets: ${{ matrix.target }}
+        target: ${{ matrix.target }}
 
     - name: Build release binaries
       run: cargo build --release --target ${{ matrix.target }}
@@ -44,16 +44,16 @@ jobs:
         mkdir -p release
         # 复制二进制文件（根据平台处理扩展名）
         if [ "${{ matrix.target }}" = "x86_64-pc-windows-msvc" ]; then
-          cp -r target/${{ matrix.target }}/release/*.exe release/
+          cp target/${{ matrix.target }}/release/logstat.exe release/
         else
-          cp -r target/${{ matrix.target }}/release/* release/
+          cp target/${{ matrix.target }}/release/logstat release/
         fi
         # 添加其他文件
         cp README.md LICENSE release/
 
     - name: Create GitHub Release
       id: create-release
-      uses: softprops/action-gh-release@v1
+      uses: softprops/action-gh-release@v2
       with:
         tag_name: ${{ steps.branch-name.outputs.tag }}
         name: Release ${{ steps.branch-name.outputs.version }}
