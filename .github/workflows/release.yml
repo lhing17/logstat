@@ -5,6 +5,9 @@ on:
     branches:
       - 'release/**'  # 当创建以 release/ 开头的分支时触发
 
+permissions:
+  contents: write  # 允许创建 release 和上传资产
+
 jobs:
   build-and-release:
     runs-on: ubuntu-latest
