@@ -1,8 +1,7 @@
-mod processing;
 mod output;
+mod processing;
 
 use clap::Parser;
-
 
 #[derive(Parser)]
 struct Cli {
@@ -27,26 +26,8 @@ fn main() -> anyhow::Result<()> {
     // 如果没有指定文件，则使用标准输入
     let files = processing::get_input_files(&args.file);
 
-    // 用于存储结果的结构
-    let mut total_all_lines = 0;
-    let mut total_matched_lines = 0;
-    let mut results = Vec::with_capacity(files.len());
-
-    for file_path in &files {
-        // 读取文件内容，如果文件路径为"-"，则从标准输入读取
-        let content = processing::read_content(file_path)?;
-
-        // 计算行数
-        let all_lines = content.lines().count();
-        let matched_lines = processing::count_lines(&content, &args.filter);
-
-        // 累加总数
-        total_all_lines += all_lines;
-        total_matched_lines += matched_lines;
-
-        // 保存每个文件的结果
-        results.push((file_path, all_lines, matched_lines));
-    }
+    // 处理文件，统计总行数和匹配行数
+    let (total_all_lines, total_matched_lines, results) = processing::process_files(&files, &args.filter)?;
 
     // 输出结果
     output::print_results(
