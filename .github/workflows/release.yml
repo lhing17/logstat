@@ -42,17 +42,20 @@ jobs:
         toolchain: stable
         targets: ${{ matrix.target }}
 
+    - name: Install cross for Linux cross-compilation
+      run: cargo install cross --git https://github.com/cross-rs/cross
+
     - name: Build release binaries
-      run: cargo build --release --target ${{ matrix.target }}
+      run: cross build --release --target ${{ matrix.target }}
 
     - name: Prepare release assets
       run: |
         mkdir -p release
         # 复制二进制文件（根据平台处理扩展名）
         if [ "${{ matrix.target }}" = "x86_64-pc-windows-msvc" ]; then
-          cp target/${{ matrix.target }}/release/*.exe release/
+          cp -r target/${{ matrix.target }}/release/*.exe release/
         else
-          cp target/${{ matrix.target }}/release/* release/
+          cp -r target/${{ matrix.target }}/release/* release/
         fi
         # 添加其他文件
         cp README.md LICENSE release/
