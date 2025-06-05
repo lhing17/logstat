@@ -1,23 +1,39 @@
-/// 统计指定内容的行数
-fn count_lines(content: &str, filters: &[String]) -> usize {
-    if !filters.is_empty() {
-        content
-            .lines()
-            .filter(|line| filters.iter().all(|f_str| line.contains(f_str)))
-            .count()
-    } else {
-        content.lines().count()
+use std::io::BufRead;
+
+/// 从文件或标准输入读取内容并计算行数
+fn process_content<R: BufRead>(reader: R, filters: &[String]) -> (usize, usize) {
+    let mut all_lines = 0;
+    let mut matched_lines = 0;
+
+    for line in reader.lines() {
+        match line {
+            Ok(line) => {
+                all_lines += 1;
+                if filters.is_empty() || filters.iter().all(|f_str| line.contains(f_str)) {
+                    matched_lines += 1;
+                }
+            }
+            Err(_) => {
+                continue; // 忽略读取错误的行
+            }
+        }
     }
+
+    (all_lines, matched_lines)
 }
 
-/// 从文件或标准输入读取内容
-fn read_content(file_path: &str) -> anyhow::Result<String> {
+fn process_single_file(file_path: &str, filters: &[String]) -> anyhow::Result<(usize, usize)> {
     if file_path == "-" {
-        std::io::read_to_string(std::io::stdin())
-            .map_err(|e| anyhow::anyhow!("无法从标准输入读取: {}", e))
+        // 处理标准输入
+        let stdin = std::io::stdin();
+        let reader = std::io::BufReader::new(stdin.lock());
+        Ok(process_content(reader, filters))
     } else {
-        std::fs::read_to_string(file_path)
-            .map_err(|e| anyhow::anyhow!("无法读取文件 {}: {}", file_path, e))
+        // 处理普通文件
+        let file = std::fs::File::open(file_path)
+            .map_err(|e| anyhow::anyhow!("无法打开文件 {}: {}", file_path, e))?;
+        let reader = std::io::BufReader::new(file);
+        Ok(process_content(reader, filters))
     }
 }
 
@@ -39,12 +55,8 @@ pub fn process_files<'a>(
     let mut results = Vec::with_capacity(files.len());
 
     for file_path in files {
-        // 读取文件内容，如果文件路径为"-"，则从标准输入读取
-        let content = read_content(file_path)?;
-
-        // 计算行数
-        let all_lines = content.lines().count();
-        let matched_lines = count_lines(&content, filters);
+        // 读取文件内容并计算行数
+        let (all_lines, matched_lines) = process_single_file(file_path, filters)?;
 
         // 累加总数
         total_all_lines += all_lines;
