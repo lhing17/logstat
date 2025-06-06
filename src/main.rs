@@ -14,7 +14,7 @@ struct Cli {
     #[arg(short, long)]
     verbose: bool,
 
-    #[arg(long, default_value = "normal")]
+    #[arg(long, default_value = "text")]
     format: String,
 
     #[arg(short = 'F', long)]

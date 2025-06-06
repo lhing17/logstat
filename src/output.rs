@@ -10,14 +10,14 @@ pub fn print_results(
     show_total: bool,
     format: &str,
 ) {
-    // format支持两种模式：normal和json
-    // normal模式：默认模式，按行打印结果
+    // format支持两种模式：text和json
+    // text模式：默认模式，按行打印结果
     // json模式：以JSON格式打印结果
 
     // 处理format参数
     let format = format.to_lowercase();
     match format.as_str() {
-        "normal" => print_normal_results(
+        "text" | "normal" => print_text_results(
             files,
             results,
             total_all_lines,
@@ -99,7 +99,7 @@ fn print_json_results(
     }
 }
 
-fn print_normal_results(
+fn print_text_results(
     files: &[String],
     results: &[(&String, usize, usize)],
     total_all_lines: usize,
